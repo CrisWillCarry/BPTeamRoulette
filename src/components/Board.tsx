@@ -14,6 +14,9 @@ export default function Board(): React.ReactElement {
   const playerOptions: Player[] = list();
   const teams : Team[] = TEAMS;
 
+  const [team1Index, setTeam1Index] = useState<number | null>(null);
+  const [team2Index, setTeam2Index] = useState<number | null>(null);
+
   const [player1Index, setPlayer1Index] = useState<number | "">(
     playerOptions.length > 0 ? 0 : ""
   );
@@ -53,6 +56,12 @@ export default function Board(): React.ReactElement {
     setIsSpinning(false);
     stopSpinMusic();
     startBackground();
+
+    if(spinPlayerIndex === player1Index) {
+      setTeam1Index(winnerTeam ? teams.indexOf(winnerTeam) : team1Index);
+    } else if(spinPlayerIndex === player2Index) {
+      setTeam2Index(winnerTeam ? teams.indexOf(winnerTeam) : team2Index);
+    }
     // TODO: apply winner effects (e.g., add to player's previous teams or UI reveal)
     if (typeof spinPlayerIndex === "number" && winnerTeam) {
       const player = playerOptions[spinPlayerIndex];
@@ -79,16 +88,29 @@ export default function Board(): React.ReactElement {
             </div>
 
             <CustomSelect
-                options={[{ label: "— select player —", value: "" }, ...optionList]}
+                options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
                 value={player1Index === "" ? "" : player1Index}
-                onChange={(v) => setPlayer1Index(v === "" ? "" : (v as number))}
+                onChange={(v) => {
+                  setPlayer1Index(v === "" ? "" : (v as number));
+                  setTeam1Index(null);
+                }}
                 className="w-full mt-5"
             />
 
             {typeof player1Index === "number" && !isSpinning && (
                 <>
                 <PlayerDisplay playerIndex={player1Index} playerOptions={playerOptions} />
-                <SpinButton onSpin={() => spin(player1Index)} />
+                {team1Index !== null ? (
+                  <div className="flex justify-center mt-4">
+                    <img
+                      src={`/images/teams/${teams[team1Index].name.replace(" ", "_")}.png`}
+                      alt={teams[team1Index].name}
+                      className="w-32 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <SpinButton onSpin={() => spin(player1Index)} />
+                )}
                 </>
             )}
         </div>
@@ -106,15 +128,30 @@ export default function Board(): React.ReactElement {
             </div>
 
             <CustomSelect
-                options={[{ label: "— select player —", value: "" }, ...optionList]}
+                options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
                 value={player2Index === "" ? "" : player2Index}
-                onChange={(v) => setPlayer2Index(v === "" ? "" : (v as number))}
+                onChange={(v) => {
+                  setPlayer2Index(v === "" ? "" : (v as number));
+                  setTeam2Index(null);
+                }}
                 className="w-full mt-5"
             />
             {typeof player2Index === "number" && (
                 <>
-                <PlayerDisplay playerIndex={player2Index} playerOptions={playerOptions} />
-                <SpinButton onSpin={() => spin(player2Index)} />
+                  <PlayerDisplay playerIndex={player2Index} playerOptions={playerOptions} />
+                  {team2Index !== null ? (
+                    <div className="flex justify-center mt-4">
+                      <img
+                        src={`/images/teams/${teams[team2Index].name.replace(" ", "_")}.png`}
+                        alt={teams[team2Index].name}
+                        className="w-32 object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex justify-center mt-4">
+                      <SpinButton onSpin={() => spin(player2Index)} />
+                    </div>
+                  )}
                 </>
             )}
         </div>
