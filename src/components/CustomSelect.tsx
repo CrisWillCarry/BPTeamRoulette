@@ -76,7 +76,8 @@ export default function CustomSelect<T = number>({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={toggle}
+        onClick={() => { toggle(); playClick(); }}
+        onMouseEnter={()=> playHover()}
         onKeyDown={handleKey}
         className="w-full p-2 bg-black border border-gray-700 rounded text-center"
       >

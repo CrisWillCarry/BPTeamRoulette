@@ -19,6 +19,9 @@ const bg = new Audio('/sounds/ambient.mp3');
 bg.loop = true;
 bg.volume = 0.4;
 
+/** dedicated audio for spin music so it can be stopped later */
+let spinAudio: HTMLAudioElement | null = null;
+
 /** Notify subscribers of muted state changes */
 function notify() {
   listeners.forEach((l) => {
@@ -63,14 +66,15 @@ export function stopBackground() {
 
 /** Explicitly set muted state */
 export function setMuted(val: boolean) {
-  muted = val;
-  if (muted) {
-    stopBackground();
-  } else {
-    // on unmute, start background only if userGesture was already triggered
-    if (userGestureCalled) startBackground();
-  }
-  notify();
+    muted = val;
+    if (muted) {
+        stopBackground();
+        stopSpinMusic();
+    } else {
+        // on unmute, start background only if userGesture was already triggered
+        if (userGestureCalled) startBackground();
+    }
+    notify();
 }
 
 /** Toggle muted and return new state */
@@ -84,17 +88,16 @@ function playOneShot(path: string, volume = 0.8, allowWhenMuted = false) {
   if (!userGestureCalled) return; // must have a user gesture first to satisfy autoplay policies
   if (muted && !allowWhenMuted) return;
 
-  try {
-    const s = new Audio(path);
-    // clamp volume to [0,1]
-    s.volume = Math.max(0, Math.min(1, volume));
-    // ensure we start from beginning
-    s.currentTime = 0;
-    // Create and play a fresh audio element so multiple sounds can overlap
-    s.play().catch(() => {});
-  } catch {}
+    try {
+        const s = new Audio(path);
+        // clamp volume to [0,1]
+        s.volume = Math.max(0, Math.min(1, volume));
+        // ensure we start from beginning
+        s.currentTime = 0;
+        // Create and play a fresh audio element so multiple sounds can overlap
+        s.play().catch(() => {});
+    } catch {}
 }
-
 
 export function playClick() {
   playOneShot('/sounds/click.mp3', 1, true);
@@ -102,4 +105,32 @@ export function playClick() {
 
 export function playHover() {
   playOneShot('/sounds/hover.mp3', 1, true);
+}
+
+/** Play spin music (creates a persistent audio element so it can be stopped). */
+export function playSpinMusic(loop = false, volume = 1) {
+    if (!userGestureCalled) return;
+    // previous behavior allowed play even when muted; keep that behavior by not blocking on muted
+    try {
+        // stop existing spin audio if present
+        if (spinAudio) {
+            try { spinAudio.pause(); } catch {}
+            spinAudio = null;
+        }
+        spinAudio = new Audio('/sounds/tigrinho.mp3');
+        spinAudio.loop = !!loop;
+        spinAudio.volume = Math.max(0, Math.min(1, volume));
+        spinAudio.currentTime = 0;
+        spinAudio.play().catch(() => {});
+    } catch {}
+}
+
+/** Stop spin music if playing */
+export function stopSpinMusic() {
+    if (!spinAudio) return;
+    try {
+        spinAudio.pause();
+        try { spinAudio.currentTime = 0; } catch {}
+    } catch {}
+    spinAudio = null;
 }
