@@ -4,7 +4,7 @@ import type { Player } from "../objects/Player";
 import PlayerDisplay from "./PlayerDisplay";
 import CustomSelect from "./CustomSelect";
 import SpinButton from "./SpinButton";
-import { playSpinMusic, startBackground, stopBackground, stopSpinMusic } from "../classes/SoundManager";
+import { playMusic, startBackground, stopBackground, stopMusic } from "../classes/SoundManager";
 import SpinView from "./SpinView";
 import type { Team } from "../objects/Team";
 import { TEAMS } from "../constants/Teams";
@@ -48,13 +48,13 @@ export default function Board(): React.ReactElement {
     setIsSpinning(true);
     setSpinPlayerIndex(playerIndex);
     stopBackground();
-    playSpinMusic();
+    playMusic("tigrinho");
     };
 
   const handleSpinEnd = (winnerTeam?: Team) => {
     // winnerTeam is the Team chosen by the spin view
     setIsSpinning(false);
-    stopSpinMusic();
+    stopMusic();
     startBackground();
 
     if(spinPlayerIndex === player1Index) {

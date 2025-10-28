@@ -1,10 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import type { Team } from "../objects/Team";
+import { playClick, playHover, playMusic, stopMusic } from "../classes/SoundManager";
 
 type Props = {
   teams: Team[];
   onFinish: (winner: Team) => void;
   className?: string;
+};
+
+type Phase = "shrink" | "merge" | "spin" | "reveal" | "announce";
+
+type State = {
+  visible: Team[];
+  phase: Phase;
+  currentIndex: number;
+  winner: Team | null;
+  revealStarted: boolean;
 };
 
 function removeRandom<T>(arr: T[]) {
@@ -13,213 +24,306 @@ function removeRandom<T>(arr: T[]) {
   return arr.slice(0, i).concat(arr.slice(i + 1));
 }
 
-export default function SpinView({ teams: initialTeams, onFinish, className = "" }: Props) {
-  const [visible, setVisible] = useState<Team[]>([...initialTeams]);
-  const [phase, setPhase] = useState<"shrink" | "merge" | "spin" | "done">("shrink");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [winner, setWinner] = useState<Team | null>(null);
+export default class SpinView extends React.Component<Props, State> {
+  private mounted = false;
+  private timers: number[] = [];
 
-  const mounted = useRef(false);
-  const timersRef = useRef<number[]>([]);
-
-  const clearTimers = () => {
-    timersRef.current.forEach((t) => clearTimeout(t));
-    timersRef.current = [];
-  };
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      clearTimers();
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      visible: [...props.teams],
+      phase: "shrink",
+      currentIndex: 0,
+      winner: null,
+      revealStarted: false,
     };
-  }, []);
+  }
 
-  // Phase 1: random removals until 3 remain
-  useEffect(() => {
-    clearTimers();
-    if (!mounted.current) return;
+  componentDidMount() {
+    this.mounted = true;
+    this.startSequenceFromProps();
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (prevProps.teams !== this.props.teams) {
+      this.startSequenceFromProps();
+    }
+
+    // if phase changed to spin, start spin
+    if (prevState.phase !== this.state.phase && this.state.phase === "spin") {
+      this.startSpin();
+    }
+
+    // if phase changed to reveal, start reveal routine
+    if (prevState.phase !== this.state.phase && this.state.phase === "reveal") {
+      this.startReveal();
+    }
+  }
+
+  componentWillUnmount() {
+    this.mounted = false;
+    this.clearTimers();
+  }
+
+  private pushTimer(id: number) {
+    this.timers.push(id);
+  }
+
+  private clearTimers() {
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers = [];
+  }
+
+  private startSequenceFromProps() {
+    this.clearTimers();
+    if (!this.mounted) return;
+
+    const initialTeams = this.props.teams || [];
+    // reset state
+    this.setState({
+      visible: [...initialTeams],
+      phase: "shrink",
+      currentIndex: 0,
+      winner: null,
+      revealStarted: false,
+    });
+
+    // fast path: already <= 3
     if (initialTeams.length <= 3) {
-      setVisible(initialTeams.slice(0, 3));
-      setPhase("merge");
+      const t = window.setTimeout(() => {
+        if (!this.mounted) return;
+        this.setState({ visible: initialTeams.slice(0, 3), phase: "merge" });
+        const t2 = window.setTimeout(() => {
+          if (!this.mounted) return;
+          this.setState({ phase: "spin" });
+        }, 350);
+        this.pushTimer(t2);
+      }, 20);
+      this.pushTimer(t);
       return;
     }
 
-    setVisible([...initialTeams]);
-
+    // schedule removals until 3 remain
     const toRemove = initialTeams.length - 3;
     let totalDelay = 0;
     for (let i = 0; i < toRemove; i++) {
-      const delay = 180 + i * 60;
+      const delay = 140 + i * 45;
       totalDelay += delay;
       const id = window.setTimeout(() => {
-        if (!mounted.current) return;
-        setVisible((prev) => {
-          if (prev.length <= 3) return prev;
-          return removeRandom(prev);
+        if (!this.mounted) return;
+        this.setState((prev) => {
+          if (prev.visible.length <= 3) return prev;
+          return { visible: removeRandom(prev.visible) };
         });
       }, totalDelay);
-      timersRef.current.push(id);
+      this.pushTimer(id);
     }
 
     // after removals, move to merge
     const t = window.setTimeout(() => {
-      if (!mounted.current) return;
-      setPhase("merge");
-    }, totalDelay + 220);
-    timersRef.current.push(t);
+      if (!this.mounted) return;
+      this.setState({ phase: "merge" });
+      const t2 = window.setTimeout(() => {
+        if (!this.mounted) return;
+        this.setState({ phase: "spin" });
+      }, 350);
+      this.pushTimer(t2);
+    }, totalDelay + 160);
+    this.pushTimer(t);
+  }
 
-    return () => clearTimers();
-  }, [initialTeams]);
+  private startSpin() {
+    this.clearTimers();
+    if (!this.mounted) return;
 
-  // Phase 2 -> small merge pause then spin phase
-  useEffect(() => {
-    if (phase !== "merge") return;
-    clearTimers();
-    const t = window.setTimeout(() => {
-      if (!mounted.current) return;
-      setPhase("spin");
-    }, 500);
-    timersRef.current.push(t);
-    return () => clearTimers();
-  }, [phase]);
-
-  // Phase 3: spin among the 3 logos
-  useEffect(() => {
-    if (phase !== "spin") return;
-    clearTimers();
-    const pool = visible.slice(0, 3);
+    const pool = this.state.visible.slice(0, 3);
     if (pool.length === 0) {
-      setPhase("done");
+      this.setState({ phase: "reveal" });
       return;
     }
 
     const finalIndex = Math.floor(Math.random() * pool.length);
-    const steps = 30 + Math.floor(Math.random() * 30); // total steps before slowing to final
-    const startDelay = 40;
-    const endDelay = 300;
+    const steps = 10 + Math.floor(Math.random() * 18); // shorter spin
+    const startDelay = 35;
+    const endDelay = 220;
 
-    // schedule a sequence of ticks with easing delays
     let cumulative = 0;
     for (let step = 0; step <= steps; step++) {
       const progress = step / steps;
       const delay = startDelay + Math.pow(progress, 2) * (endDelay - startDelay);
       cumulative += delay;
       const id = window.setTimeout(() => {
-        if (!mounted.current) return;
-        setCurrentIndex((s) => (s + 1) % pool.length);
+        if (!this.mounted) return;
+        this.setState((s) => ({ currentIndex: (s.currentIndex + 1) % pool.length }));
       }, Math.floor(cumulative));
-      timersRef.current.push(id);
+      this.pushTimer(id);
     }
 
-    // finishing sequence: a few extra ticks that slow down and end on finalIndex
-    const extras = 6 + Math.floor(Math.random() * 6);
+    const extras = 4 + Math.floor(Math.random() * 4);
     for (let e = 0; e <= extras; e++) {
       const progress = (steps + e) / (steps + extras);
       const delay = startDelay + Math.pow(progress, 2) * (endDelay - startDelay);
       cumulative += delay;
       const id = window.setTimeout(() => {
-        if (!mounted.current) return;
-        setCurrentIndex((s) => (s + 1) % pool.length);
+        if (!this.mounted) return;
+        this.setState((s) => ({ currentIndex: (s.currentIndex + 1) % pool.length }));
       }, Math.floor(cumulative));
-      timersRef.current.push(id);
+      this.pushTimer(id);
     }
 
-    // final timeout: set winner and move to done, but DO NOT call onFinish automatically
     const finalDelay = cumulative + endDelay;
     const finalId = window.setTimeout(() => {
-      if (!mounted.current) return;
-      setCurrentIndex(finalIndex);
-      const chosen = pool[finalIndex];
-      setWinner(chosen);
-      setPhase("done");
-      // do not call onFinish here — user must confirm via button
+      if (!this.mounted) return;
+
+      // hide logos immediately after spin finishes
+      this.setState({ currentIndex: finalIndex, visible: [] });
+      stopMusic();
+      console.log("Playing music for", pool[finalIndex].name);
+      playMusic(`hinos/${pool[finalIndex].name.replace(/ /g, "_")}`);
+            // wait 4 seconds with no logos shown, then reveal the winner
+      const revealDelay = 4000;
+      const revealId = window.setTimeout(() => {
+        if (!this.mounted) return;
+        const chosen = pool[finalIndex];
+        this.setState({ winner: chosen, phase: "reveal" });
+      }, revealDelay);
+      this.pushTimer(revealId);
     }, Math.floor(finalDelay));
-    timersRef.current.push(finalId);
+    this.pushTimer(finalId);
+  }
 
-    return () => clearTimers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, visible]);
+  private startReveal() {
+    this.clearTimers();
+    if (!this.mounted) return;
 
-  return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`} aria-live="polite">
-      <div className="relative w-full max-w-4xl p-6">
-        {phase === "shrink" && (
-          <div className="grid grid-cols-6 gap-3 place-items-center">
-            {visible.map((t, i) => (
-              <img
-                key={t.id + "-" + i}
-                src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
-                alt={t.name}
-                className="h-24 w-auto transition-opacity duration-200 ease-out"
-              />
-            ))}
-          </div>
-        )}
+    // hide the grid immediately
+    this.setState({ visible: [], revealStarted: false });
 
-        {phase === "merge" && (
-          <div className="flex items-center justify-center gap-6">
-            {visible.slice(0, 3).map((t, i) => (
-              <img
-                key={t.id + "-" + i}
-                src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
-                alt={t.name}
-                className="h-28 w-auto transform transition-all duration-400 ease-out"
-                style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.6))" }}
-              />
-            ))}
-          </div>
-        )}
+    // small kick to let initial style apply then rise
+    const kick = window.setTimeout(() => {
+      if (!this.mounted) return;
+      this.setState({ revealStarted: true });
+    }, 50);
+    this.pushTimer(kick);
 
-        {phase === "spin" && visible.slice(0, 3).length > 0 && (
-          <div className="flex items-center justify-center">
-            <div className="relative flex items-center justify-center" style={{ width: 260, height: 260 }}>
-              {visible.slice(0, 3).map((t, i) => {
-                const isActive = i === currentIndex;
-                return (
-                  <img
-                    key={t.id + "-" + i}
-                    src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
-                    alt={t.name}
-                    className={`absolute transition-all duration-150 ease-out ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
-                    style={{
-                      width: 220,
-                      height: "auto",
-                      zIndex: isActive ? 30 : 10,
-                      filter: isActive ? "drop-shadow(0 10px 30px rgba(0,0,0,0.7))" : "none",
-                    }}
-                  />
-                );
-              })}
+    // after ~5s (rise duration) move to announce
+    const announce = window.setTimeout(() => {
+      if (!this.mounted) return;
+      this.setState({ phase: "announce" });
+    }, 50 + 5000);
+    this.pushTimer(announce);
+  }
+
+  private handleContinue = () => {
+    const { winner } = this.state;
+    if (!winner) return;
+    this.clearTimers();
+    this.props.onFinish(winner);
+  };
+
+  render() {
+    const { className } = this.props;
+    const { visible, phase, currentIndex, winner, revealStarted } = this.state;
+
+    return (
+      <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`} aria-live="polite">
+        <div className="relative w-full max-w-4xl p-6 min-h-[320px]">
+          {phase === "shrink" && (
+            <div className="grid grid-cols-6 gap-3 place-items-center">
+              {visible.map((t, i) => (
+                <img
+                  key={t.id + "-" + i}
+                  src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
+                  alt={t.name}
+                  className="h-20 w-auto transition-opacity duration-200 ease-out"
+                />
+              ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {phase === "done" && winner && (
-          <div className="flex flex-col items-center justify-center gap-4">
-            <div className="text-white text-4xl font-bold">{winner.name}</div>
+          {phase === "merge" && (
+            <div className="flex items-center justify-center gap-6">
+              {visible.slice(0, 3).map((t, i) => (
+                <img
+                  key={t.id + "-" + i}
+                  src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
+                  alt={t.name}
+                  className="h-28 w-auto transform transition-all duration-400 ease-out"
+                  style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.6))" }}
+                />
+              ))}
+            </div>
+          )}
 
-            <div className="relative">
+          {phase === "spin" && visible.slice(0, 3).length > 0 && (
+            <div className="flex items-center justify-center">
+              <div className="relative flex items-center justify-center" style={{ width: 260, height: 260 }}>
+                {visible.slice(0, 3).map((t, i) => {
+                  const isActive = i === currentIndex;
+                  return (
+                    <img
+                      key={t.id + "-" + i}
+                      src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
+                      alt={t.name}
+                      className={`absolute transition-all duration-150 ease-out ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
+                      style={{
+                        width: 220,
+                        height: "auto",
+                        zIndex: isActive ? 30 : 10,
+                        filter: isActive ? "drop-shadow(0 10px 30px rgba(0,0,0,0.7))" : "none",
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {phase === "reveal" && winner && (
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+              <img
+                src={`/images/teams/${winner.name.replace(/ /g, "_")}.png`}
+                alt={winner.name}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: revealStarted ? "50%" : "100%",
+                  transform: revealStarted ? "translate(-50%,-50%) scale(1)" : "translate(-50%,0) scale(0.98)",
+                  transition: "top 5000ms cubic-bezier(.22,.9,.2,1), transform 5000ms cubic-bezier(.22,.9,.2,1), opacity 300ms",
+                  width: 240,
+                  height: "auto",
+                  zIndex: 80,
+                  filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.7))",
+                  opacity: 1,
+                }}
+              />
+            </div>
+          )}
+
+          {phase === "announce" && winner && (
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="text-white text-4xl font-bold">{winner.name}</div>
               <img
                 src={`/images/teams/${winner.name.replace(/ /g, "_")}.png`}
                 alt={winner.name}
                 className="h-64 w-auto"
+                style={{ filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.7))" }}
               />
+              <button
+                type="button"
+                onMouseEnter={playHover}
+                onClick={() => {
+                  this.handleContinue();
+                  playClick();
+                }}
+                className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+              >
+                Continue
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                clearTimers();
-                onFinish(winner);
-              }}
-              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium hover:cursor-pointer hover:scale-125 transition-all duration-150 ease-in-out"
-            >
-              Voltar
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }

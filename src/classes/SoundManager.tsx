@@ -20,7 +20,7 @@ bg.loop = true;
 bg.volume = 0.4;
 
 /** dedicated audio for spin music so it can be stopped later */
-let spinAudio: HTMLAudioElement | null = null;
+let musicAudio: HTMLAudioElement | null = null;
 
 /** Notify subscribers of muted state changes */
 function notify() {
@@ -69,7 +69,7 @@ export function setMuted(val: boolean) {
     muted = val;
     if (muted) {
         stopBackground();
-        stopSpinMusic();
+        stopMusic();
     } else {
         // on unmute, start background only if userGesture was already triggered
         if (userGestureCalled) startBackground();
@@ -108,29 +108,29 @@ export function playHover() {
 }
 
 /** Play spin music (creates a persistent audio element so it can be stopped). */
-export function playSpinMusic(loop = false, volume = 1) {
+export function playMusic(name: string, loop = false, volume = 1) {
     if (!userGestureCalled) return;
     // previous behavior allowed play even when muted; keep that behavior by not blocking on muted
     try {
         // stop existing spin audio if present
-        if (spinAudio) {
-            try { spinAudio.pause(); } catch {}
-            spinAudio = null;
+        if (musicAudio) {
+            try { musicAudio.pause(); } catch {}
+            musicAudio = null;
         }
-        spinAudio = new Audio('/sounds/tigrinho.mp3');
-        spinAudio.loop = !!loop;
-        spinAudio.volume = Math.max(0, Math.min(1, volume));
-        spinAudio.currentTime = 0;
-        spinAudio.play().catch(() => {});
+        musicAudio = new Audio(`/sounds/${name}.mp3`);
+        musicAudio.loop = !!loop;
+        musicAudio.volume = Math.max(0, Math.min(1, volume));
+        musicAudio.currentTime = 0;
+        musicAudio.play().catch(() => {});
     } catch {}
 }
 
 /** Stop spin music if playing */
-export function stopSpinMusic() {
-    if (!spinAudio) return;
+export function stopMusic() {
+    if (!musicAudio) return;
     try {
-        spinAudio.pause();
-        try { spinAudio.currentTime = 0; } catch {}
+        musicAudio.pause();
+        try { musicAudio.currentTime = 0; } catch {}
     } catch {}
-    spinAudio = null;
+    musicAudio = null;
 }
