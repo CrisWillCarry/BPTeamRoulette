@@ -95,11 +95,11 @@ export default function Board(): React.ReactElement {
             Jogador 1
             </div>
 
-            <CustomSelect
+            <CustomSelect<number>
                 options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
                 value={player1Index === "" ? "" : player1Index}
                 onChange={(v) => {
-                  setPlayer1Index(v === "" ? "" : (v as number));
+                  setPlayer1Index(v === "" ? "" : v);
                   setTeam1Index(null);
                 }}
                 className="w-full mt-5"
@@ -109,7 +109,7 @@ export default function Board(): React.ReactElement {
                 <>
                 <PlayerDisplay playerIndex={player1Index} playerOptions={playerOptions} />
                 {team1Index !== null ? (
-                  <div className="flex flex-col items-center mt-4">
+                  <div className="flex flex-col items-center mt-4 min-h-52">
                     <img
                       src={`/images/teams/${teams[team1Index].name.replace(" ", "_")}.png`}
                       alt={teams[team1Index].name}
@@ -152,11 +152,11 @@ export default function Board(): React.ReactElement {
             Jogador 2
             </div>
 
-            <CustomSelect
+            <CustomSelect<number>
                 options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
                 value={player2Index === "" ? "" : player2Index}
                 onChange={(v) => {
-                  setPlayer2Index(v === "" ? "" : (v as number));
+                  setPlayer2Index(v === "" ? "" : v);
                   setTeam2Index(null);
                 }}
                 className="w-full mt-5"
@@ -165,30 +165,30 @@ export default function Board(): React.ReactElement {
                 <>
                   <PlayerDisplay playerIndex={player2Index} playerOptions={playerOptions} />
                   {team2Index !== null ? (
-                    <div className="flex flex-col items-center mt-4">
-                      <img
-                        src={`/images/teams/${teams[team2Index].name.replace(" ", "_")}.png`}
-                        alt={teams[team2Index].name}
-                        className="w-32 object-contain"
-                      />
-                      {playerOptions[player2Index].tokens > 0 && (
-                        <>
-                       <button
-                          onClick={() => {
-                            reroll(player2Index, team2Index);
-                            playClick();
-                          }}
-                          title="Reroll"
-                          aria-label="Reroll"
-                          className="mt-2 text-white font-semibold py-1 px-2 rounded flex items-center gap-2 bg-transparent focus:outline-none hover:cursor-pointer"
-                          onMouseEnter={playHover}
-                        >
-                          <ArrowPathIcon className="w-8 h-8 text-white" aria-hidden="true" />
-                        </button>
-                        <p className="text-white">Tokens: {playerOptions[player2Index].tokens}</p>
-                        </>
-                      )}
-                    </div>
+                    <div className="flex flex-col items-center mt-4 min-h-52">
+                        <img
+                          src={`/images/teams/${teams[team2Index].name.replace(" ", "_")}.png`}
+                          alt={teams[team2Index].name}
+                          className="w-32 object-contain"
+                        />
+                        {playerOptions[player2Index].tokens > 0 && (
+                          <>
+                         <button
+                            onClick={() => {
+                              reroll(player2Index, team2Index);
+                              playClick();
+                            }}
+                            title="Reroll"
+                            aria-label="Reroll"
+                            className="mt-2 text-white font-semibold py-1 px-2 rounded flex items-center gap-2 bg-transparent focus:outline-none hover:cursor-pointer"
+                            onMouseEnter={playHover}
+                          >
+                            <ArrowPathIcon className="w-8 h-8 text-white" aria-hidden="true" />
+                          </button>
+                          <p className="text-white">Tokens: {playerOptions[player2Index].tokens}</p>
+                          </>
+                        )}
+                      </div>
                   ) : (
                     <div className="flex justify-center mt-4">
                       <SpinButton onSpin={() => spin(player2Index)} />
