@@ -2,7 +2,7 @@ import type { Player } from "../objects/Player";
 import { PLAYERS } from "../constants/Players";
 
 type Subscriber = (playersById: Record<number, Player>) => void;
-const STORAGE_KEY = "bptr_players_v1";
+const STORAGE_KEY = "bptr_players_v2";
 
 export default class PlayerManager {
   private playersById: Record<number, Player> = {};
@@ -22,7 +22,7 @@ export default class PlayerManager {
     }
     // seed from constants
     this.playersById = PLAYERS.reduce((acc, p) => {
-      acc[p.id] = { ...p, previousTeams: [...p.previousTeams] };
+      acc[p.id] = { ...p, previousTeams: [...p.previousTeams], tokens: p.tokens };
       return acc;
     }, {} as Record<number, Player>);
     this.persist();
@@ -77,11 +77,47 @@ export default class PlayerManager {
     return true;
   }
 
+  removePreviousTeam(playerId: number, teamId: number) {
+    const p = this.playersById[playerId];
+    if (!p) return false;
+    this.playersById[playerId] = {
+      ...p,
+      previousTeams: p.previousTeams.filter(t => t.id !== teamId),
+    };
+    this.persist();
+    this.notify();
+    return true;
+  }
+
+  removeToken(playerId: number, amount: number = 1) {
+    const p = this.playersById[playerId];
+    if (!p) return false;
+    this.playersById[playerId] = {
+      ...p,
+      tokens: Math.max(0, p.tokens - amount),
+    };
+    this.persist();
+    this.notify();
+    return true;
+  }
+
   subscribe(cb: Subscriber) {
     this.subs.push(cb);
     cb(this.getAllById());
     return () => { this.subs = this.subs.filter(s => s !== cb); };
   }
+
+  addToken(playerId: number, amount: number = 1) {
+    const p = this.playersById[playerId];
+    if (!p) return false;
+    this.playersById[playerId] = {
+      ...p,
+      tokens: p.tokens + amount,
+    };
+    this.persist();
+    this.notify();
+    return true;
+  } 
 }
 
 export const playerManager = new PlayerManager();

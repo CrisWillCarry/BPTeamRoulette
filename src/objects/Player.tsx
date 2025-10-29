@@ -4,4 +4,5 @@ export type Player = {
     id: number;
     name: string;
     previousTeams: Team[];
+    tokens: number;
 };

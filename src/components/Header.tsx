@@ -6,17 +6,14 @@ const Header: React.FC = () => {
     const [muted, setLocalMuted] = useState<boolean>(isMuted());
 
     useEffect(() => {
-      // subscribe to changes from sound manager
       const unsub = subscribeMuted((m) => setLocalMuted(m));
       return () => unsub();
     }, []);
 
     const toggle = () => {
         if (muted) {
-            // clicking "unmute" is a user gesture -> allow playback
             userGesture();
             setMuted(false);
-            // try to start background immediately
             startBackground();
         } else {
             setMuted(true);
@@ -24,20 +21,22 @@ const Header: React.FC = () => {
     };
 
     return (
-        <div className="fixed top-2 right-2 z-50 pointer-events-auto">
-            <button
-                type="button"
-                onClick={toggle}
-                aria-pressed={muted}
-                aria-label={muted ? "Unmute" : "Mute"}
-                className="w-12 h-12 flex items-center justify-center rounded-md p-2 text-white transform transition-transform duration-150 ease-in-out hover:scale-150 hover:cursor-pointer"
-            >
-                {muted ? (
-                    <SpeakerXMarkIcon className="w-8 h-8" aria-hidden="true" />
-                ) : (
-                    <SpeakerWaveIcon className="w-8 h-8" aria-hidden="true" />
-                )}
-            </button>
+        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-auto">
+            <div className="w-full flex justify-end p-2">
+                <button
+                    type="button"
+                    onClick={toggle}
+                    aria-pressed={muted}
+                    aria-label={muted ? "Unmute" : "Mute"}
+                    className="w-12 h-12 flex items-center justify-center rounded-md p-2 text-white transform transition-transform duration-150 ease-in-out hover:scale-110"
+                >
+                    {muted ? (
+                        <SpeakerXMarkIcon className="w-8 h-8" aria-hidden="true" />
+                    ) : (
+                        <SpeakerWaveIcon className="w-8 h-8" aria-hidden="true" />
+                    )}
+                </button>
+            </div>
         </div>
     );
 };

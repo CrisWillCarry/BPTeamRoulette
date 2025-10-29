@@ -10,7 +10,9 @@ export const PageLayout: React.FC<LayoutProps> = ({ children }) => {
     return (
         <div className="min-h-screen flex flex-col bg-black">
             <Header />
-            <main className="flex-1 flex items-center justify-center">{children}</main>
+            <main className="flex-1 flex items-center justify-center pt-14">
+                {children}
+            </main>
             <Footer />
         </div>
     );
