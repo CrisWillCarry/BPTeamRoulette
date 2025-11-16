@@ -11,7 +11,7 @@ type Props<T = string | number> = {
   className?: string;
 };
 
-export default function CustomSelect<T = number>({
+export default function CustomSelect<T = string | number>({
   options,
   value,
   onChange,

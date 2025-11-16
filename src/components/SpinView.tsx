@@ -112,7 +112,7 @@ export default class SpinView extends React.Component<Props, State> {
       const id = window.setTimeout(() => {
         if (!this.mounted) return;
         this.setState((prev) => {
-          if (prev.visible.length <= 3) return prev;
+          if (prev.visible.length <= 3) return null;
           return { visible: removeRandom(prev.visible) };
         });
       }, totalDelay);

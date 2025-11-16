@@ -96,8 +96,8 @@ export default function Board(): React.ReactElement {
             Jogador 1
             </div>
 
-            <CustomSelect<number>
-                options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
+            <CustomSelect<number | "">
+                options={[{ label: "— escolha jogador —", value: "" as number | "" }, ...optionList]}
                 value={player1Index === "" ? "" : player1Index}
                 onChange={(v) => {
                   setPlayer1Index(v === "" ? "" : v);
@@ -154,8 +154,8 @@ export default function Board(): React.ReactElement {
             Jogador 2
             </div>
 
-            <CustomSelect<number>
-                options={[{ label: "— escolha jogador —", value: "" }, ...optionList]}
+            <CustomSelect<number | "">
+                options={[{ label: "— escolha jogador —", value: "" as number | "" }, ...optionList]}
                 value={player2Index === "" ? "" : player2Index}
                 onChange={(v) => {
                   setPlayer2Index(v === "" ? "" : v);
