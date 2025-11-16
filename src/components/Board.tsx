@@ -84,7 +84,7 @@ export default function Board(): React.ReactElement {
     }
   };
   return (
-    <div className="flex justify-between items-center gap-4 p-4 h-full box-border text-white">
+    <div className="flex justify-between items-start gap-4 p-4 h-full box-border text-white">
     {!isSpinning && (
       <>
         <div className="flex-1">
@@ -140,6 +140,7 @@ export default function Board(): React.ReactElement {
             )}
         </div>
 
+        {/* center vs image: center vertically between the two fixed-height cards */}
         <div className="flex items-center justify-center self-center">
             <img src="/images/vs.png" alt="Versus" className="h-32 md:h-48 lg:h-64 block" />
         </div>
