@@ -84,12 +84,13 @@ export default function Board(): React.ReactElement {
     }
   };
   return (
-    <div className="flex justify-between items-start gap-4 p-4 h-full box-border text-white">
+    // stacked on small screens, row on md+
+    <div className="flex flex-col md:flex-row justify-between items-start gap-4 p-4 h-full box-border text-white">
     {!isSpinning && (
       <>
-        <div className="flex-1">
+        <div className="flex-1 w-full">
             <div
-            className="mb-2 text-7xl pr-10 font-medium text-center"
+            className="mb-2 text-4xl sm:text-6xl md:text-7xl pr-10 font-medium text-center"
             style={{ fontFamily: '"Arcady", "Press Start 2P", monospace' }}
             >
             Jogador 1
@@ -140,14 +141,14 @@ export default function Board(): React.ReactElement {
             )}
         </div>
 
-        {/* center vs image: center vertically between the two fixed-height cards */}
-        <div className="flex items-center justify-center self-center">
-            <img src="/images/vs.png" alt="Versus" className="h-32 md:h-48 lg:h-64 block" />
+        {/* VS image: center in both stacked and row layouts */}
+        <div className="flex items-center justify-center self-center md:self-center">
+            <img src="/images/vs.png" alt="Versus" className="h-20 sm:h-28 md:h-48 lg:h-64 block" />
         </div>
 
-        <div className="flex-1 text-center">
+        <div className="flex-1 w-full text-center">
             <div
-            className="mb-2 text-7xl pl-10"
+            className="mb-2 text-4xl sm:text-6xl md:text-7xl pl-10"
             style={{ fontFamily: '"Arcady", "Press Start 2P", monospace' }}
             >
             Jogador 2

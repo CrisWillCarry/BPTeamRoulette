@@ -227,7 +227,7 @@ export default class SpinView extends React.Component<Props, State> {
 
     return (
       <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`} aria-live="polite">
-        <div className="relative w-full max-w-4xl p-6 min-h-[320px]">
+        <div className="relative w-full max-w-3xl p-4 sm:p-6 min-h-[280px] sm:min-h-[420px]">
           {phase === "shrink" && (
             <div className="grid grid-cols-6 gap-3 place-items-center">
               {visible.map((t, i) => (
@@ -248,7 +248,7 @@ export default class SpinView extends React.Component<Props, State> {
                   key={t.id + "-" + i}
                   src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
                   alt={t.name}
-                  className="h-28 w-auto transform transition-all duration-400 ease-out"
+                  className="h-20 sm:h-28 w-auto transform transition-all duration-400 ease-out"
                   style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.6))" }}
                 />
               ))}
@@ -257,7 +257,7 @@ export default class SpinView extends React.Component<Props, State> {
 
           {phase === "spin" && visible.slice(0, 3).length > 0 && (
             <div className="flex items-center justify-center">
-              <div className="relative flex items-center justify-center" style={{ width: 260, height: 260 }}>
+              <div className="relative flex items-center justify-center" style={{ width: "min(64vw, 320px)", height: "min(64vw, 320px)" }}>
                 {visible.slice(0, 3).map((t, i) => {
                   const isActive = i === currentIndex;
                   return (
@@ -267,7 +267,7 @@ export default class SpinView extends React.Component<Props, State> {
                       alt={t.name}
                       className={`absolute transition-all duration-150 ease-out ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
                       style={{
-                        width: 220,
+                        width: "min(56vw, 280px)",
                         height: "auto",
                         zIndex: isActive ? 30 : 10,
                         filter: isActive ? "drop-shadow(0 10px 30px rgba(0,0,0,0.7))" : "none",
@@ -290,7 +290,7 @@ export default class SpinView extends React.Component<Props, State> {
                   top: revealStarted ? "50%" : "100%",
                   transform: revealStarted ? "translate(-50%,-50%) scale(1)" : "translate(-50%,0) scale(0.98)",
                   transition: "top 5000ms cubic-bezier(.22,.9,.2,1), transform 5000ms cubic-bezier(.22,.9,.2,1), opacity 300ms",
-                  width: 240,
+                  width: "clamp(160px, 22vw, 360px)",
                   height: "auto",
                   zIndex: 80,
                   filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.7))",
@@ -306,7 +306,7 @@ export default class SpinView extends React.Component<Props, State> {
               <img
                 src={`/images/teams/${winner.name.replace(/ /g, "_")}.png`}
                 alt={winner.name}
-                className="h-64 w-auto"
+                className="h-40 sm:h-64 w-auto"
                 style={{ filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.7))" }}
               />
               <button

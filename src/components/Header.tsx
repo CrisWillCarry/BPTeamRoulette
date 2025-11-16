@@ -22,18 +22,18 @@ const Header: React.FC = () => {
 
     return (
         <div className="fixed top-0 left-0 right-0 z-50 pointer-events-auto">
-            <div className="w-full flex justify-end p-2">
+            <div className="w-full flex justify-end p-2 pr-4">
                 <button
                     type="button"
                     onClick={toggle}
                     aria-pressed={muted}
                     aria-label={muted ? "Unmute" : "Mute"}
-                    className="w-12 h-12 flex items-center justify-center rounded-md p-2 text-white transform transition-transform duration-150 ease-in-out hover:scale-110"
+                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-md p-2 text-white transform transition-transform duration-150 ease-in-out hover:scale-110"
                 >
                     {muted ? (
-                        <SpeakerXMarkIcon className="w-8 h-8" aria-hidden="true" />
+                        <SpeakerXMarkIcon className="w-6 h-6 sm:w-8 sm:h-8" aria-hidden="true" />
                     ) : (
-                        <SpeakerWaveIcon className="w-8 h-8" aria-hidden="true" />
+                        <SpeakerWaveIcon className="w-6 h-6 sm:w-8 sm:h-8" aria-hidden="true" />
                     )}
                 </button>
             </div>

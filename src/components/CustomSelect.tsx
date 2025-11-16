@@ -79,7 +79,7 @@ export default function CustomSelect<T = number>({
         onClick={() => { toggle(); playClick(); }}
         onMouseEnter={()=> playHover()}
         onKeyDown={handleKey}
-        className="w-full p-2 bg-black border border-gray-700 rounded text-center"
+        className="w-full p-2 sm:p-3 bg-black border border-gray-700 rounded text-center text-sm sm:text-base"
       >
         {value === "" ? placeholder : options.find((o) => o.value === value)?.label}
       </button>

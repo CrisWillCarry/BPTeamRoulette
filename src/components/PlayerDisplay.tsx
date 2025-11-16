@@ -13,10 +13,11 @@ const PlayerDisplay: React.FC<{ playerIndex: number; playerOptions: Player[] }> 
     if (!player) return null;
 
     return (
-        <div className="relative inline-block w-full align-top">
-            {/* image wrapper - fixed height so card size never changes */}
+        // keep top-aligned and prevent shrinking on narrow layouts
+        <div className="relative inline-block w-full align-top shrink-0">
+            {/* image wrapper - responsive fixed height so card size never changes */}
             <div
-                className="relative group cursor-pointer h-[360px] md:h-[60vh] overflow-hidden"
+                className="relative group cursor-pointer h-56 sm:h-72 md:h-[60vh] overflow-hidden"
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 onFocus={() => setHovered(true)}
@@ -69,7 +70,7 @@ const PlayerDisplay: React.FC<{ playerIndex: number; playerOptions: Player[] }> 
                                     key={index}
                                     src={`/images/teams/${team.name.replace(" ", "_")}.png`}
                                     alt={team.name}
-                                    className="h-8 w-auto rounded opacity-95"
+                                    className="h-6 sm:h-8 w-auto rounded opacity-95"
                                 />
                             ))}
                         </div>

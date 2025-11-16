@@ -14,7 +14,7 @@ const StartButton: React.FC<StartButtonProps> = ({ onClick }) => {
    
     return (
         <button
-          className="text-6xl bg-red-600 hover:bg-red-700 text-white font-mono py-4 px-18 rounded hover:cursor-pointer hover:scale-110 transition-transform duration-150 ease-in-out"
+          className="text-3xl sm:text-4xl md:text-6xl bg-red-600 hover:bg-red-700 text-white font-mono py-3 sm:py-4 px-6 sm:px-10 rounded-md hover:cursor-pointer hover:scale-105 transition-transform duration-150 ease-in-out"
           onClick={onStart}
           onMouseEnter={() => playHover()}
         >
