@@ -2,7 +2,7 @@ import type { Player } from "../objects/Player";
 import { PLAYERS } from "../constants/Players";
 
 type Subscriber = (playersById: Record<number, Player>) => void;
-const STORAGE_KEY = "bptr_players_v2";
+const STORAGE_KEY = "bptr_players_v3";
 
 export default class PlayerManager {
   private playersById: Record<number, Player> = {};
