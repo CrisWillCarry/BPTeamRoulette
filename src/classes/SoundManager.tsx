@@ -15,9 +15,24 @@ const listeners: Listener[] = [];
 let muted = true;
 let userGestureCalled = false;
 
-const bg = new Audio('/sounds/ambient.mp3');
-bg.loop = true;
+const playlist = ['Dont_Matter', 'Numb', 'Pill', 'Stereo_love', 'Wonderful'];
+
+function getRandomSong() {
+  return playlist[Math.floor(Math.random() * playlist.length)];
+}
+
+const bg = new Audio();
 bg.volume = 0.4;
+
+/** Play next random song from playlist */
+function playNextRandomSong() {
+  bg.src = `/sounds/${getRandomSong()}.mp3`;
+  bg.currentTime = 0;
+  bg.play().catch(() => {});
+}
+
+// When a song ends, play another random one
+bg.addEventListener('ended', playNextRandomSong);
 
 /** dedicated audio for spin music so it can be stopped later */
 let musicAudio: HTMLAudioElement | null = null;
@@ -52,9 +67,12 @@ export function userGesture() {
 export function startBackground() {
   if (!userGestureCalled) return;
   if (muted) return;
-  bg.play().catch(() => {
-    // play may be blocked for some environments; ignore
-  });
+  // Stop any current playback and play a fresh song
+  try {
+    bg.pause();
+    bg.currentTime = 0;
+  } catch {}
+  playNextRandomSong();
 }
 
 /** Stop background and reset position */

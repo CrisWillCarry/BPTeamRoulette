@@ -1,14 +1,15 @@
 import React from "react";
 import type { Team } from "../objects/Team";
-import { playClick, playHover, playMusic, stopMusic } from "../classes/SoundManager";
+import { playClick, playHover } from "../classes/SoundManager";
 
 type Props = {
   teams: Team[];
   onFinish: (winner: Team) => void;
+  onReveal?: (winner: Team) => void;
   className?: string;
 };
 
-type Phase = "shrink" | "merge" | "spin" | "reveal" | "announce";
+type Phase = "spin" | "reveal" | "announce";
 
 type State = {
   visible: Team[];
@@ -18,12 +19,6 @@ type State = {
   revealStarted: boolean;
 };
 
-function removeRandom<T>(arr: T[]) {
-  if (arr.length === 0) return arr;
-  const i = Math.floor(Math.random() * arr.length);
-  return arr.slice(0, i).concat(arr.slice(i + 1));
-}
-
 export default class SpinView extends React.Component<Props, State> {
   private mounted = false;
   private timers: number[] = [];
@@ -32,7 +27,7 @@ export default class SpinView extends React.Component<Props, State> {
     super(props);
     this.state = {
       visible: [...props.teams],
-      phase: "shrink",
+      phase: "spin",
       currentIndex: 0,
       winner: null,
       revealStarted: false,
@@ -80,77 +75,41 @@ export default class SpinView extends React.Component<Props, State> {
 
     const initialTeams = this.props.teams || [];
     // reset state
-    this.setState({
-      visible: [...initialTeams],
-      phase: "shrink",
-      currentIndex: 0,
-      winner: null,
-      revealStarted: false,
-    });
-
-    // fast path: already <= 3
-    if (initialTeams.length <= 3) {
-      const t = window.setTimeout(() => {
+    this.setState(
+      {
+        visible: [...initialTeams],
+        phase: "spin",
+        currentIndex: 0,
+        winner: null,
+        revealStarted: false,
+      },
+      () => {
+        // Call startSpin after state is set
         if (!this.mounted) return;
-        this.setState({ visible: initialTeams.slice(0, 3), phase: "merge" });
-        const t2 = window.setTimeout(() => {
-          if (!this.mounted) return;
-          this.setState({ phase: "spin" });
-        }, 350);
-        this.pushTimer(t2);
-      }, 20);
-      this.pushTimer(t);
-      return;
-    }
-
-    // schedule removals until 3 remain
-    const toRemove = initialTeams.length - 3;
-    let totalDelay = 0;
-    for (let i = 0; i < toRemove; i++) {
-      const delay = 140 + i * 45;
-      totalDelay += delay;
-      const id = window.setTimeout(() => {
-        if (!this.mounted) return;
-        this.setState((prev) => {
-          if (prev.visible.length <= 3) return null;
-          return { visible: removeRandom(prev.visible) };
-        });
-      }, totalDelay);
-      this.pushTimer(id);
-    }
-
-    // after removals, move to merge
-    const t = window.setTimeout(() => {
-      if (!this.mounted) return;
-      this.setState({ phase: "merge" });
-      const t2 = window.setTimeout(() => {
-        if (!this.mounted) return;
-        this.setState({ phase: "spin" });
-      }, 350);
-      this.pushTimer(t2);
-    }, totalDelay + 160);
-    this.pushTimer(t);
+        this.startSpin();
+      }
+    );
   }
 
   private startSpin() {
     this.clearTimers();
     if (!this.mounted) return;
 
-    const pool = this.state.visible.slice(0, 3);
+    const pool = this.state.visible;
     if (pool.length === 0) {
       this.setState({ phase: "reveal" });
       return;
     }
 
     const finalIndex = Math.floor(Math.random() * pool.length);
-    const steps = 10 + Math.floor(Math.random() * 18); // shorter spin
-    const startDelay = 35;
-    const endDelay = 220;
+    const steps = 30 + Math.floor(Math.random() * 85); // slightly longer
+    const startDelay = 12;
+    const endDelay = 235;
 
     let cumulative = 0;
     for (let step = 0; step <= steps; step++) {
       const progress = step / steps;
-      const delay = startDelay + Math.pow(progress, 2) * (endDelay - startDelay);
+      const delay = startDelay + Math.pow(progress, 1.2) * (endDelay - startDelay); // smoother easing
       cumulative += delay;
       const id = window.setTimeout(() => {
         if (!this.mounted) return;
@@ -159,10 +118,10 @@ export default class SpinView extends React.Component<Props, State> {
       this.pushTimer(id);
     }
 
-    const extras = 4 + Math.floor(Math.random() * 4);
+    const extras = 12 + Math.floor(Math.random() * 7);
     for (let e = 0; e <= extras; e++) {
       const progress = (steps + e) / (steps + extras);
-      const delay = startDelay + Math.pow(progress, 2) * (endDelay - startDelay);
+      const delay = startDelay + Math.pow(progress, 1.2) * (endDelay - startDelay); // smoother easing
       cumulative += delay;
       const id = window.setTimeout(() => {
         if (!this.mounted) return;
@@ -176,11 +135,15 @@ export default class SpinView extends React.Component<Props, State> {
       if (!this.mounted) return;
 
       // hide logos immediately after spin finishes
-      this.setState({ currentIndex: finalIndex, visible: [] });
-      stopMusic();
-      console.log("Playing music for", pool[finalIndex].name);
-      playMusic(`hinos/${pool[finalIndex].name.replace(/ /g, "_")}`);
-            // wait 4 seconds with no logos shown, then reveal the winner
+      this.setState({ currentIndex: finalIndex, visible: [] }, () => {
+        // Call onReveal callback immediately when logos disappear
+        const chosen = pool[finalIndex];
+        if (chosen && this.props.onReveal) {
+          this.props.onReveal(chosen);
+        }
+      });
+      
+      // wait 4 seconds with no logos shown, then reveal the winner
       const revealDelay = 4000;
       const revealId = window.setTimeout(() => {
         if (!this.mounted) return;
@@ -228,37 +191,10 @@ export default class SpinView extends React.Component<Props, State> {
     return (
       <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`} aria-live="polite">
         <div className="relative w-full max-w-3xl p-4 sm:p-6 min-h-[280px] sm:min-h-[420px]">
-          {phase === "shrink" && (
-            <div className="grid grid-cols-6 gap-3 place-items-center">
-              {visible.map((t, i) => (
-                <img
-                  key={t.id + "-" + i}
-                  src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
-                  alt={t.name}
-                  className="h-20 w-auto transition-opacity duration-200 ease-out"
-                />
-              ))}
-            </div>
-          )}
-
-          {phase === "merge" && (
-            <div className="flex items-center justify-center gap-6">
-              {visible.slice(0, 3).map((t, i) => (
-                <img
-                  key={t.id + "-" + i}
-                  src={`/images/teams/${t.name.replace(/ /g, "_")}.png`}
-                  alt={t.name}
-                  className="h-20 sm:h-28 w-auto transform transition-all duration-400 ease-out"
-                  style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.6))" }}
-                />
-              ))}
-            </div>
-          )}
-
-          {phase === "spin" && visible.slice(0, 3).length > 0 && (
+          {phase === "spin" && visible.length > 0 && (
             <div className="flex items-center justify-center">
               <div className="relative flex items-center justify-center" style={{ width: "min(64vw, 320px)", height: "min(64vw, 320px)" }}>
-                {visible.slice(0, 3).map((t, i) => {
+                {visible.map((t, i) => {
                   const isActive = i === currentIndex;
                   return (
                     <img

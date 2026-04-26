@@ -26,6 +26,7 @@ export default function Board(): React.ReactElement {
   );
 
   const [spinPlayerIndex, setSpinPlayerIndex] = useState<number | null>(null);
+  const [playedRapariga, setPlayedRapariga] = useState(false);
   // keep indices valid if playerOptions changes
   useEffect(() => {
     if (player1Index === "") setPlayer1Index(0);
@@ -48,15 +49,32 @@ export default function Board(): React.ReactElement {
   const spin = (playerIndex: number) => {
     setIsSpinning(true);
     setSpinPlayerIndex(playerIndex);
+    
+    const shouldPlayRapariga = Math.random() < 0.1;
+    setPlayedRapariga(shouldPlayRapariga);
+    
+    if (shouldPlayRapariga) {
+      stopBackground();
+      playMusic("rapariga");
+    }
+  };
+
+  const handleTeamRevealed = (winnerTeam: Team) => {
+    // Stop whatever is playing (background or rapariga) and play the hino
     stopBackground();
-    playMusic("tigrinho");
-    };
+    stopMusic();
+    
+    if (winnerTeam) {
+      playMusic(`hinos/${winnerTeam.name.replace(/ /g, "_")}`);
+    }
+  };
 
   const handleSpinEnd = (winnerTeam?: Team) => {
-    // winnerTeam is the Team chosen by the spin view
-    setIsSpinning(false);
+    // User clicked continue - stop hino and restart background
     stopMusic();
     startBackground();
+    setPlayedRapariga(false);
+    setIsSpinning(false);
 
     if(spinPlayerIndex === player1Index) {
       setTeam1Index(winnerTeam ? teams.indexOf(winnerTeam) : team1Index);
@@ -205,6 +223,7 @@ export default function Board(): React.ReactElement {
             <SpinView
             teams={teams}
             onFinish={(winner) => handleSpinEnd(winner)}
+            onReveal={(winner) => handleTeamRevealed(winner)}
             />
         )}
     </div>
